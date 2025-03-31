@@ -1,0 +1,14 @@
+USE `Online board game store` ;
+delete from buyer;
+delete from category;
+delete from discount;
+delete from favorites;
+delete from feedback;
+delete from maker;
+delete from `order`;
+delete from order_to_product;
+delete from payment;
+delete from product;
+delete from product_to_category;
+delete from product_to_favorites;
+delete from refund;
