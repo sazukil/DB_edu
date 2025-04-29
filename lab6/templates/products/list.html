@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Список товаров{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Список товаров</h2>
+
+<!-- Фильтр -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5>Фильтры товаров</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" action="{{ url_for('product_list') }}">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label for="title" class="form-label">Название</label>
+                    <input type="text" class="form-control" id="title" name="title"
+                        value="{{ request.args.get('title', '') }}">
+                </div>
+
+                <div class="col-md-3">
+                    <label for="min_price" class="form-label">Цена от</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="min_price" name="min_price"
+                            value="{{ request.args.get('min_price', '') }}" min="0">
+                        <span class="input-group-text">руб.</span>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="max_price" class="form-label">Цена до</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="max_price" name="max_price"
+                            value="{{ request.args.get('max_price', '') }}" min="0">
+                        <span class="input-group-text">руб.</span>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="difficulty" class="form-label">Сложность</label>
+                    <select class="form-select" id="difficulty" name="difficulty">
+                        <option value="">Все</option>
+                        <option value="Легкая" {% if request.args.get('difficulty')=='Легкая' %}selected{% endif %}>
+                            Легкая</option>
+                        <option value="Средняя" {% if request.args.get('difficulty')=='Средняя' %}selected{% endif %}>
+                            Средняя</option>
+                        <option value="Сложная" {% if request.args.get('difficulty')=='Сложная' %}selected{% endif %}>
+                            Сложная</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="min_age" class="form-label">Возраст от</label>
+                    <input type="number" class="form-control" id="min_age" name="min_age"
+                        value="{{ request.args.get('min_age', '') }}" min="0">
+                </div>
+
+                <div class="col-md-3">
+                    <label for="max_age" class="form-label">Возраст до</label>
+                    <input type="number" class="form-control" id="max_age" name="max_age"
+                        value="{{ request.args.get('max_age', '') }}" min="0">
+                </div>
+
+                <div class="col-md-3">
+                    <label for="game_time" class="form-label">Время игры</label>
+                    <input type="text" class="form-control" id="game_time" name="game_time"
+                        value="{{ request.args.get('game_time', '') }}" placeholder="30-60 мин">
+                </div>
+
+                <div class="col-md-3">
+                    <label for="players" class="form-label">Игроков</label>
+                    <input type="text" class="form-control" id="players" name="players"
+                        value="{{ request.args.get('players', '') }}" placeholder="2-4">
+                </div>
+
+                <div class="col-md-6">
+                    <label for="maker_id" class="form-label">Производитель</label>
+                    <select class="form-select" id="maker_id" name="maker_id">
+                        <option value="">Все</option>
+                        {% for maker in all_makers %}
+                        <option value="{{ maker.id_maker }}" {% if
+                            request.args.get('maker_id')|string==maker.id_maker|string %}selected{% endif %}>
+                            {{ maker.Name }} ({{ maker.Country }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="min_discount" class="form-label">Скидка от</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="min_discount" name="min_discount"
+                            value="{{ request.args.get('min_discount', '') }}" min="0" max="100">
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="max_discount" class="form-label">Скидка до</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="max_discount" name="max_discount"
+                            value="{{ request.args.get('max_discount', '') }}" min="0" max="100">
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Категории</label>
+                    <div class="category-checkboxes">
+                        {% for category in all_categories %}
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" name="categories"
+                                id="cat{{ category.id_category }}" value="{{ category.id_category }}" {% if
+                                category.id_category|string in request.args.getlist('categories') %}checked{% endif %}>
+                            <label class="form-check-label" for="cat{{ category.id_category }}">
+                                {{ category.Title }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">Применить</button>
+                <a href="{{ url_for('product_list') }}" class="btn btn-secondary">Сбросить</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Таблица -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Найдено товаров: {{ products|length }}</h4>
+    <a href="{{ url_for('product_create') }}" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> Добавить товар
+    </a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Название</th>
+                <th>Описание</th>
+                <th>Цена</th>
+                <th>Скидка</th>
+                <th>Сложность</th>
+                <th>Возраст</th>
+                <th>Время игры</th>
+                <th>Игроков</th>
+                <th>Производитель</th>
+                <th>Категории</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+            <tr>
+                <td>{{ product.id_product }}</td>
+                <td>{{ product.Title }}</td>
+                <td>{{ product.Description|truncate(50) }}</td>
+                <td>{{ product.Price }} руб.</td>
+                <td>
+                    {% if product.discount %}
+                    {{ product.discount }}%
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <td>{{ product.Difficult }}</td>
+                <td>{{ product.Age_limit }}+</td>
+                <td>{{ product.Game_time }}</td>
+                <td>{{ product.Number_of_players }}</td>
+                <td>{{ product.maker_name }}</td>
+                <td>{{ product.categories }}</td>
+                <td>
+                    <a href="{{ url_for('product_edit', product_id=product.id_product) }}"
+                        class="btn btn-sm btn-warning">Редактировать</a>
+                    <form action="{{ url_for('product_delete', product_id=product.id_product) }}" method="POST"
+                        style="display: inline;">
+                        <button type="submit" class="btn btn-sm btn-danger"
+                            onclick="return confirm('Вы уверены, что хотите удалить этот товар?')">
+                            Удалить
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="11" class="text-center py-4">
+                    <div class="text-muted">
+                        <i class="bi bi-exclamation-circle fs-1"></i>
+                        <p class="mt-2">Товары не найдены. Попробуйте изменить параметры фильтрации.</p>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

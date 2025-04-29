@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Категории товаров{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Поиск товаров по названию</h2>
+
+<form class="mb-4">
+    <div class="input-group">
+        <input type="text" class="form-control" name="product_name" placeholder="Введите часть названия товара"
+            value="{{ product_name }}">
+        <button class="btn btn-primary" type="submit">Найти</button>
+    </div>
+</form>
+
+{% if product_name %}
+{% if products %}
+<div class="alert alert-info">
+    Найдено товаров: {{ products|length }}
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Название товара</th>
+                <th>Категории</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+            <tr>
+                <td>{{ product.product_title }}</td>
+                <td>
+                    {% if product.categories %}
+                    {% for category in product.categories.split('\n') %}
+                    {{ category }}<br>
+                    {% endfor %}
+                    {% else %}
+                    Нет категорий
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-warning">
+    Товары, содержащие "{{ product_name }}" в названии, не найдены
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

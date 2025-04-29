@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Список категорий{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Список категорий</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Название</th>
+            <th>Описание</th>
+            <th>Классификатор</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for category in categories %}
+        <tr>
+            <td>{{ category.id_category }}</td>
+            <td>{{ category.Title }}</td>
+            <td>{{ category.Description }}</td>
+            <td>{{ category.Classifier }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
