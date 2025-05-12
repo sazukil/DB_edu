@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Регистрация{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Регистрация нового пользователя</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('register') }}" id="registerForm">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="login" class="form-label">Логин*</label>
+                            <input type="text" class="form-control" id="login" name="login" required
+                                oninput="checkLoginAvailability(this.value)">
+                            <div class="invalid-feedback" id="loginFeedback">
+                                Этот логин уже занят
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="password" class="form-label">Пароль*</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="lastname" class="form-label">Фамилия*</label>
+                            <input type="text" class="form-control" id="lastname" name="lastname" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="firstname" class="form-label">Имя*</label>
+                            <input type="text" class="form-control" id="firstname" name="firstname" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="patronymic" class="form-label">Отчество</label>
+                            <input type="text" class="form-control" id="patronymic" name="patronymic">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="birthday" class="form-label">Дата рождения</label>
+                            <input type="date" class="form-control" id="birthday" name="birthday"
+                                max="{{ datetime.now().strftime('%Y-%m-%d') }}">
+                            <small class="text-muted">Формат: ГГГГ-ММ-ДД</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="phone" class="form-label">Телефон</label>
+                            <input type="tel" class="form-control" id="phone" name="phone" pattern="\+?[0-9\s\-\(\)]+"
+                                placeholder="+7XXXXXXXXXX">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email">
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">Зарегистрироваться</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center">
+                <small class="text-muted">Уже есть аккаунт? <a href="{{ url_for('login') }}">Войдите</a></small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function checkLoginAvailability(login) {
+        if (login.length < 3) return;
+
+        fetch(`/check-login?login=${encodeURIComponent(login)}`)
+            .then(response => response.json())
+            .then(data => {
+                const loginInput = document.getElementById('login');
+                const feedback = document.getElementById('loginFeedback');
+                const submitBtn = document.getElementById('submitBtn');
+
+                if (data.available) {
+                    loginInput.classList.remove('is-invalid');
+                    submitBtn.disabled = false;
+                } else {
+                    loginInput.classList.add('is-invalid');
+                    feedback.style.display = 'block';
+                    submitBtn.disabled = true;
+                }
+            });
+    }
+
+</script>
+{% endblock %}

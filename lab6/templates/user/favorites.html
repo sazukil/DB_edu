@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Избранное{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Мои избранные товары</h2>
+
+    {% if favorites %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Название</th>
+                    <th>Цена</th>
+                    <th>Дата добавления</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in favorites %}
+                <tr>
+                    <td>{{ product.Title }}</td>
+                    <td>{{ product.Price }} руб.</td>
+                    <td>{{ product.Date_added }}</td>
+                    <td>
+                        <form action="{{ url_for('delete_from_favorites', product_id=product.id_product) }}"
+                            method="POST" style="display: inline;">
+                            <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
+                        </form>
+                        <form action="{{ url_for('add_to_cart', product_id=product.id_product) }}" method="POST"
+                            style="display: inline;">
+                            <button type="submit" class="btn btn-sm btn-success">В корзину</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        У вас пока нет товаров в избранном.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

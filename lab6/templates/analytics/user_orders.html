@@ -3,6 +3,7 @@
 {% block title %}Заказы пользователя{% endblock %}
 
 {% block content %}
+{% if request.path == '/analytics/user_orders' %}
 <h2 class="mb-4">Заказы пользователя</h2>
 
 <form class="mb-4">
@@ -12,6 +13,7 @@
         <button class="btn btn-primary" type="submit">Поиск</button>
     </div>
 </form>
+{% endif %}
 
 {% if login %}
 <h4 class="mb-3">Заказы пользователя: {{ login }}</h4>

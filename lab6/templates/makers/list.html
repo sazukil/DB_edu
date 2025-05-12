@@ -76,9 +76,11 @@
 <!-- Таблица -->
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0">Найдено производителей: {{ makers|length }}</h4>
+    {% if session.user.login == 'sazukil' %}
     <a href="{{ url_for('maker_create') }}" class="btn btn-success">
         <i class="bi bi-plus-circle"></i> Добавить производителя
     </a>
+    {% endif %}
 </div>
 
 <div class="table-responsive">
@@ -90,7 +92,9 @@
                 <th>Страна</th>
                 <th>Email</th>
                 <th>Телефон</th>
+                {% if session.user.login == 'sazukil' %}
                 <th>Действия</th>
+                {% endif %}
             </tr>
         </thead>
         <tbody>
@@ -101,6 +105,7 @@
                 <td>{{ maker.Country }}</td>
                 <td>{{ maker.Email or '' }}</td>
                 <td>{{ maker.Phone or '' }}</td>
+                {% if session.user.login == 'sazukil' %}
                 <td>
                     <a href="{{ url_for('maker_edit', maker_id=maker.id_maker) }}"
                         class="btn btn-sm btn-warning">Редактировать</a>
@@ -112,6 +117,7 @@
                         </button>
                     </form>
                 </td>
+                {% endif %}
             </tr>
             {% else %}
             <tr>

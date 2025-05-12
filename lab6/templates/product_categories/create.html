@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Добавление связи Продукт-Категория{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Добавление новой связи</h2>
+
+<form method="POST" action="{{ url_for('product_category_create') }}">
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label for="product_id" class="form-label">Продукт</label>
+            <select class="form-select" id="product_id" name="product_id" required>
+                <option value="">Выберите продукт</option>
+                {% for product in products %}
+                <option value="{{ product.id_product }}">{{ product.Title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label for="category_id" class="form-label">Категория</label>
+            <select class="form-select" id="category_id" name="category_id" required>
+                <option value="">Выберите категорию</option>
+                {% for category in categories %}
+                <option value="{{ category.id_category }}">{{ category.Title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Сохранить</button>
+    <a href="{{ url_for('product_category_list') }}" class="btn btn-secondary">Отмена</a>
+</form>
+{% endblock %}

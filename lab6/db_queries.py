@@ -1,4 +1,6 @@
 import pymysql.cursors
+from datetime import datetime
+import random
 
 class DatabaseManager:
     def __init__(self, config):
@@ -29,7 +31,7 @@ class DatabaseManager:
     def get_filtered_products(self, title=None, min_price=None, max_price=None,
                     difficulty=None, min_age=None, max_age=None,
                     game_time=None, players=None, maker_id=None, categories=None,
-                    min_discount=None, max_discount=None):
+                    min_discount=0, max_discount=100):
         sql = """
         SELECT p.*, m.Name as maker_name, d.Discount_amount as discount,
             d.Title, GROUP_CONCAT(c.Title SEPARATOR ', ') as categories
@@ -425,7 +427,6 @@ class DatabaseManager:
 
         return result
 
-
     def get_user_orders(self, login):
         sql = """
         SELECT
@@ -455,3 +456,332 @@ class DatabaseManager:
             with connection.cursor() as cursor:
                 cursor.execute(sql, (login,))
                 return cursor.fetchall()
+
+    def get_all_product_category_relations(self):
+        """Получить все связи продукты-категории"""
+        sql = """
+        SELECT ptc.id, ptc.Product_id_product, p.Title as product_title,
+            ptc.Category_id_category, c.Title as category_title
+        FROM Product_to_Category ptc
+        JOIN Product p ON ptc.Product_id_product = p.id_product
+        JOIN Category c ON ptc.Category_id_category = c.id_category
+        ORDER BY ptc.id
+        """
+        with self.get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(sql)
+                return cursor.fetchall()
+
+    def create_product_category_relation(self, product_id, category_id):
+        """Создать новую связь продукт-категория"""
+        try:
+            with self.get_connection() as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT MAX(id) FROM Product_to_Category")
+                    max_id = cursor.fetchone()['MAX(id)'] or 0
+                    new_id = max_id + 1
+
+                    sql = """
+                    INSERT INTO Product_to_Category (id, Product_id_product, Category_id_category)
+                    VALUES (%s, %s, %s)
+                    """
+                    cursor.execute(sql, (new_id, product_id, category_id))
+                connection.commit()
+                return True
+        except Exception as e:
+            print(f"Ошибка при создании связи: {str(e)}")
+            return False
+
+    def update_product_category_relation(self, relation_id, new_product_id, new_category_id):
+        """Обновить связь продукт-категория"""
+        try:
+            with self.get_connection() as connection:
+                with connection.cursor() as cursor:
+                    sql = """
+                    UPDATE Product_to_Category
+                    SET Product_id_product = %s,
+                        Category_id_category = %s
+                    WHERE id = %s
+                    """
+                    cursor.execute(sql, (new_product_id, new_category_id, relation_id))
+                connection.commit()
+                return True
+        except Exception as e:
+            print(f"Ошибка при обновлении связи: {str(e)}")
+            return False
+
+    def get_product_category_relation(self, relation_id):
+        """Получить связь продукт-категория по ID"""
+        sql = """
+        SELECT ptc.id, ptc.Product_id_product, p.Title as product_title,
+            ptc.Category_id_category, c.Title as category_title
+        FROM Product_to_Category ptc
+        JOIN Product p ON ptc.Product_id_product = p.id_product
+        JOIN Category c ON ptc.Category_id_category = c.id_category
+        WHERE ptc.id = %s
+        """
+        with self.get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(sql, (relation_id,))
+                return cursor.fetchone()
+
+    def delete_product_category_relation(self, relation_id):
+        """Удалить связь продукт-категория"""
+        try:
+            with self.get_connection() as connection:
+                with connection.cursor() as cursor:
+                    sql = "DELETE FROM Product_to_Category WHERE id = %s"
+                    cursor.execute(sql, (relation_id,))
+                connection.commit()
+                return True
+        except Exception as e:
+            print(f"Ошибка при удалении связи: {str(e)}")
+            return False
+
+    def get_products_with_categories(self):
+        """Получить продукты с их категориями (группировка по продукту)"""
+        sql = """
+        SELECT
+            p.id_product,
+            p.Title as product_title,
+            GROUP_CONCAT(c.Title SEPARATOR ', ') as categories,
+            GROUP_CONCAT(c.id_category SEPARATOR ',') as category_ids
+        FROM Product p
+        LEFT JOIN Product_to_Category ptc ON p.id_product = ptc.Product_id_product
+        LEFT JOIN Category c ON ptc.Category_id_category = c.id_category
+        GROUP BY p.id_product
+        ORDER BY p.Title
+        """
+        with self.get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(sql)
+                return cursor.fetchall()
+
+    def update_product_categories(self, product_id, category_ids):
+        """Обновить все категории продукта"""
+        try:
+            with self.get_connection() as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "DELETE FROM Product_to_Category WHERE Product_id_product = %s",
+                        (product_id,)
+                    )
+
+                    for category_id in category_ids:
+                        cursor.execute("SELECT MAX(id) FROM Product_to_Category")
+                        max_id = cursor.fetchone()['MAX(id)'] or 0
+                        new_id = max_id + 1
+
+                        cursor.execute(
+                            "INSERT INTO Product_to_Category (id, Product_id_product, Category_id_category) VALUES (%s, %s, %s)",
+                            (new_id, product_id, int(category_id))
+                        )
+
+                connection.commit()
+                return True
+        except Exception as e:
+            print(f"Ошибка при обновлении категорий товара: {str(e)}")
+            return False
+
+    def get_filtered_products_with_categories(self, product_name=None, category_ids=None):
+        sql = """
+        SELECT
+            p.id_product,
+            p.Title as product_title,
+            GROUP_CONCAT(c.Title SEPARATOR ', ') as categories,
+            GROUP_CONCAT(c.id_category SEPARATOR ',') as category_ids
+        FROM Product p
+        LEFT JOIN Product_to_Category ptc ON p.id_product = ptc.Product_id_product
+        LEFT JOIN Category c ON ptc.Category_id_category = c.id_category
+        WHERE 1=1
+        """
+
+        params = []
+
+        if product_name:
+            sql += " AND p.Title LIKE %s"
+            params.append(f"%{product_name}%")
+
+        if category_ids:
+            placeholders = ','.join(['%s'] * len(category_ids))
+            sql += f" AND c.id_category IN ({placeholders})"
+            params.extend([int(cid) for cid in category_ids])
+
+        sql += " GROUP BY p.id_product ORDER BY p.Title"
+
+        with self.get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(sql, params)
+                return cursor.fetchall()
+
+
+    def authenticate_user(self, login, password):
+        sql = """
+        SELECT Login, Lastname, Firstname
+        FROM Buyer
+        WHERE Login = %s AND Password = %s
+        """
+        with self.get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(sql, (login, password))
+                return cursor.fetchone()
+
+    def create_user(self, login, password, lastname, firstname, patronymic=None, birthday=None, email=None, phone=None):
+        try:
+            with self.get_connection() as connection:
+                with connection.cursor() as cursor:
+                    sql = """
+                    INSERT INTO Buyer (Login, Password, Lastname, Firstname, Patronymic, Birthday, Email, Phone, Registration_date)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, CURDATE())
+                    """
+                    cursor.execute(sql, (
+                        login,
+                        password,
+                        lastname,
+                        firstname,
+                        patronymic,
+                        birthday,
+                        email,
+                        phone
+                    ))
+                connection.commit()
+                return True
+        except pymysql.err.IntegrityError:
+            return False
+        except Exception as e:
+            print(f"Ошибка при создании пользователя: {str(e)}")
+            return False
+
+    def get_user_favorites(self, user_login):
+        sql = """
+        SELECT p.*, ptf.Date_added
+        FROM Product p
+        JOIN Product_to_Favorites ptf ON p.id_product = ptf.Product_id_product
+        JOIN Favorites f ON ptf.Favorites_id_favorites = f.id_favorites
+        WHERE f.Buyer_Login = %s
+        ORDER BY ptf.Date_added DESC
+        """
+        with self.get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(sql, (user_login,))
+                return cursor.fetchall()
+
+    def add_to_favorites(self, user_login, product_id):
+        try:
+            with self.get_connection() as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT id_favorites FROM Favorites WHERE Buyer_Login = %s", (user_login,))
+                    favorites = cursor.fetchone()
+
+                    if not favorites:
+                        cursor.execute(
+                            "INSERT INTO Favorites (Count_products, Update_date, Buyer_Login) VALUES (0, CURDATE(), %s)",
+                            (user_login,)
+                        )
+                        favorites_id = cursor.lastrowid
+                    else:
+                        favorites_id = favorites['id_favorites']
+
+                    cursor.execute(
+                        "SELECT * FROM Product_to_Favorites WHERE Product_id_product = %s AND Favorites_id_favorites = %s",
+                        (product_id, favorites_id)
+                    )
+                    if cursor.fetchone():
+                        return False
+
+                    cursor.execute(
+                        "INSERT INTO Product_to_Favorites (Date_added, Product_id_product, Favorites_id_favorites) "
+                        "VALUES (CURDATE(), %s, %s)",
+                        (product_id, favorites_id)
+                    )
+
+                    cursor.execute(
+                        "UPDATE Favorites SET Count_products = Count_products + 1, Update_date = CURDATE() "
+                        "WHERE id_favorites = %s",
+                        (favorites_id,)
+                    )
+
+                connection.commit()
+                return True
+        except Exception as e:
+            print(f"Ошибка при добавлении в избранное: {str(e)}")
+            return False
+
+    def delete_from_favorites(self, user_login, product_id):
+        """Удаляет товар из избранного пользователя"""
+        try:
+            with self.get_connection() as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT id_favorites FROM Favorites WHERE Buyer_Login = %s",
+                        (user_login,)
+                    )
+                    favorites = cursor.fetchone()
+
+                    if not favorites:
+                        return False
+
+                    favorites_id = favorites['id_favorites']
+
+                    cursor.execute(
+                        "DELETE FROM Product_to_Favorites "
+                        "WHERE Product_id_product = %s AND Favorites_id_favorites = %s",
+                        (product_id, favorites_id))
+
+                    cursor.execute(
+                        "UPDATE Favorites "
+                        "SET Count_products = GREATEST(0, Count_products - 1), "
+                        "Update_date = CURDATE() "
+                        "WHERE id_favorites = %s",
+                        (favorites_id,))
+
+                connection.commit()
+                return True
+        except Exception as e:
+            print(f"Ошибка при удалении из избранного: {str(e)}")
+            return False
+
+    def create_order(self, order_data):
+        try:
+            with self.get_connection() as connection:
+                with connection.cursor() as cursor:
+                    order_number = int(datetime.now().strftime("%Y%m%d")[2:] + str(random.randint(100, 999)))
+
+                    order_sql = """
+                    INSERT INTO `Order` (Order_numder, Delivery_method, Status, Adress, Order_date, Buyer_Login)
+                    VALUES (%s, %s, 'В обработке', %s, CURDATE(), %s)
+                    """
+                    cursor.execute(order_sql, (
+                        order_number,
+                        order_data['delivery_method'],
+                        order_data['address'],
+                        order_data['buyer_login']
+                    ))
+
+                    total_cost = 0
+                    for product_id, quantity in order_data['cart_items'].items():
+                        cursor.execute("SELECT Price FROM Product WHERE id_product = %s", (int(product_id),))
+                        product = cursor.fetchone()
+                        if product:
+                            price = product['Price']
+                            total_cost += price * quantity
+
+                            order_product_sql = """
+                            INSERT INTO Order_to_Product (Count, Product_id_product, Order_Order_numder)
+                            VALUES (%s, %s, %s)
+                            """
+                            cursor.execute(order_product_sql, (quantity, int(product_id), order_number))
+
+                    payment_sql = """
+                    INSERT INTO Payment (Status, Payment_method, Payment_date, Cost, Order_Order_numder)
+                    VALUES ('Ожидает оплаты', %s, CURDATE(), %s, %s)
+                    """
+                    cursor.execute(payment_sql, (order_data['payment_method'], total_cost, order_number))
+
+                    connection.commit()
+                    return {'order_number': order_number, 'total_cost': total_cost}
+        except Exception as e:
+            print(f"Ошибка при создании заказа: {str(e)}")
+            if 'connection' in locals():
+                connection.rollback()
+            return False

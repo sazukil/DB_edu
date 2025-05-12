@@ -132,12 +132,105 @@
 
 <!-- Таблица -->
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0">Найдено товаров: {{ products|length }}</h4>
+    <h4 class="mb-0">Найдено товаров: {{ total_products }}</h4>
+    {% if session.user.login == 'sazukil' %}
     <a href="{{ url_for('product_create') }}" class="btn btn-success">
         <i class="bi bi-plus-circle"></i> Добавить товар
     </a>
+    {% endif %}
 </div>
 
+<nav>
+    <ul class="pagination justify-content-center">
+        {% if page > 1 %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('product_list', page=page-1, **current_filters) }}">
+                &laquo;Назад
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link">&laquo;Назад</span>
+        </li>
+        {% endif %}
+
+        {% if page > 4 %}
+        <li class="page-item {% if 1 == page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('product_list', page=1, **current_filters) }}">
+                1
+            </a>
+        </li>
+        {% if page > 5 %}
+        <li class="page-item disabled">
+            <span class="page-link">...</span>
+        </li>
+        {% endif %}
+        {% endif %}
+
+        {% for p in range([1, page-3]|max, page) %}
+        {% if p > 0 %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('product_list', page=p, **current_filters) }}">
+                {{ p }}
+            </a>
+        </li>
+        {% endif %}
+        {% endfor %}
+
+        <li class="page-item active">
+            <span class="page-link">{{ page }}</span>
+        </li>
+
+        {% for p in range(page+1, [page+4, total_pages+1]|min) %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('product_list', page=p, **current_filters) }}">
+                {{ p }}
+            </a>
+        </li>
+        {% endfor %}
+
+        {% if page < total_pages - 3 %} {% if page < total_pages - 4 %} <li class="page-item disabled">
+            <span class="page-link">...</span>
+            </li>
+            {% endif %}
+            <li class="page-item {% if total_pages-1 == page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('product_list', page=total_pages-1, **current_filters) }}">
+                    {{ total_pages-1 }}
+                </a>
+            </li>
+            <li class="page-item {% if total_pages == page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('product_list', page=total_pages, **current_filters) }}">
+                    {{ total_pages }}
+                </a>
+            </li>
+            {% endif %}
+
+            {% if page < total_pages %} <li class="page-item">
+                <a class="page-link" href="{{ url_for('product_list', page=page+1, **current_filters) }}">
+                    Вперед&raquo;
+                </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Вперед&raquo;</span>
+                </li>
+                {% endif %}
+    </ul>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mt-3">
+    <div>
+        <small class="text-muted">
+            {% set start = (page-1)*per_page + 1 %}
+            {% set end = start + per_page - 1 %}
+            {% if end > total_products %}
+            {% set end = total_products %}
+            {% endif %}
+            Показано {{ start }}-{{ end }} из {{ total_products }} товаров
+        </small>
+    </div>
+
+</div>
 <div class="table-responsive">
     <table class="table table-striped table-hover align-middle">
         <thead class="table-dark">
@@ -177,6 +270,15 @@
                 <td>{{ product.maker_name }}</td>
                 <td>{{ product.categories }}</td>
                 <td>
+                    <form action="{{ url_for('add_to_favorites', product_id=product.id_product) }}" method="POST"
+                        style="display: inline;">
+                        <button type="submit" class="btn btn-sm btn-primary">В избранное</button>
+                    </form>
+                    <form action="{{ url_for('add_to_cart', product_id=product.id_product) }}" method="POST"
+                        style="display: inline;">
+                        <button type="submit" class="btn btn-sm btn-primary">В корзину</button>
+                    </form>
+                    {% if session.user.login == 'sazukil' %}
                     <a href="{{ url_for('product_edit', product_id=product.id_product) }}"
                         class="btn btn-sm btn-warning">Редактировать</a>
                     <form action="{{ url_for('product_delete', product_id=product.id_product) }}" method="POST"
@@ -186,6 +288,7 @@
                             Удалить
                         </button>
                     </form>
+                    {% endif %}
                 </td>
             </tr>
             {% else %}
@@ -200,5 +303,95 @@
             {% endfor %}
         </tbody>
     </table>
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <div>
+            <small class="text-muted">
+                {% set start = (page-1)*per_page + 1 %}
+                {% set end = start + per_page - 1 %}
+                {% if end > total_products %}
+                {% set end = total_products %}
+                {% endif %}
+                Показано {{ start }}-{{ end }} из {{ total_products }} товаров
+            </small>
+        </div>
+    </div>
 </div>
+
+<nav>
+    <ul class="pagination justify-content-center">
+        {% if page > 1 %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('product_list', page=page-1, **current_filters) }}">
+                &laquo;Назад
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link">&laquo;Назад</span>
+        </li>
+        {% endif %}
+
+        {% if page > 4 %}
+        <li class="page-item {% if 1 == page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('product_list', page=1, **current_filters) }}">
+                1
+            </a>
+        </li>
+        {% if page > 5 %}
+        <li class="page-item disabled">
+            <span class="page-link">...</span>
+        </li>
+        {% endif %}
+        {% endif %}
+
+        {% for p in range([1, page-3]|max, page) %}
+        {% if p > 0 %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('product_list', page=p, **current_filters) }}">
+                {{ p }}
+            </a>
+        </li>
+        {% endif %}
+        {% endfor %}
+
+        <li class="page-item active">
+            <span class="page-link">{{ page }}</span>
+        </li>
+
+        {% for p in range(page+1, [page+4, total_pages+1]|min) %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('product_list', page=p, **current_filters) }}">
+                {{ p }}
+            </a>
+        </li>
+        {% endfor %}
+
+        {% if page < total_pages - 3 %} {% if page < total_pages - 4 %} <li class="page-item disabled">
+            <span class="page-link">...</span>
+            </li>
+            {% endif %}
+            <li class="page-item {% if total_pages-1 == page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('product_list', page=total_pages-1, **current_filters) }}">
+                    {{ total_pages-1 }}
+                </a>
+            </li>
+            <li class="page-item {% if total_pages == page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('product_list', page=total_pages, **current_filters) }}">
+                    {{ total_pages }}
+                </a>
+            </li>
+            {% endif %}
+
+            {% if page < total_pages %} <li class="page-item">
+                <a class="page-link" href="{{ url_for('product_list', page=page+1, **current_filters) }}">
+                    Вперед&raquo;
+                </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Вперед&raquo;</span>
+                </li>
+                {% endif %}
+    </ul>
+</nav>
 {% endblock %}

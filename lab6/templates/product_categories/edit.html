@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Редактирование категорий продукта{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Редактирование категорий для: {{ product.Title }}</h2>
+
+<form method="POST" action="{{ url_for('product_category_edit', product_id=product.id_product) }}">
+    <div class="mb-4">
+        <h5>Выберите категории:</h5>
+        <div class="category-checkboxes">
+            {% for category in all_categories %}
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="categories" id="cat{{ category.id_category }}"
+                    value="{{ category.id_category }}" {% if category.id_category in current_category_ids %}checked{%
+                    endif %}>
+                <label class="form-check-label" for="cat{{ category.id_category }}">
+                    {{ category.Title }}
+                </label>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+    <a href="{{ url_for('product_category_list') }}" class="btn btn-secondary">Отмена</a>
+</form>
+{% endblock %}

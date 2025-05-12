@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Корзина{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Моя корзина</h2>
+
+    {% if session.cart and session.cart|length > 0 %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Название</th>
+                    <th>Цена за шт.</th>
+                    <th>Количество</th>
+                    <th>Сумма</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in cart_items %}
+                <tr>
+                    <td>{{ product.Title }}</td>
+                    <td>{{ product.Price }} руб.</td>
+                    <td>
+                        <form action="{{ url_for('update_cart', product_id=product.id_product) }}" method="POST"
+                            class="d-inline">
+                            <input type="number" name="quantity" value="{{ product.quantity }}" min="1"
+                                class="form-control d-inline" style="width: 70px;">
+                            <button type="submit" class="btn btn-sm btn-primary">Обновить</button>
+                        </form>
+                    </td>
+                    <td>{{ product.total_price }} руб.</td>
+                    <td>
+                        <form action="{{ url_for('remove_from_cart', product_id=product.id_product) }}" method="POST"
+                            style="display: inline;">
+                            <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3" class="text-end"><strong>Итого:</strong></td>
+                    <td><strong>{{ total }} руб.</strong></td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h4>Оформление заказа</h4>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('checkout') }}">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="delivery_method" class="form-label">Способ доставки*</label>
+                        <select class="form-select" id="delivery_method" name="delivery_method" required>
+                            <option value="">Выберите способ доставки</option>
+                            <option value="Почта">Почта</option>
+                            <option value="Курьер">Курьер</option>
+                            <option value="Самовывоз">Самовывоз</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="address" class="form-label">Адрес доставки*</label>
+                        <input type="text" class="form-control" id="address" name="address"
+                            placeholder="Укажите адрес доставки" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="payment_method" class="form-label">Способ оплаты*</label>
+                        <select class="form-select" id="payment_method" name="payment_method" required>
+                            <option value="">Выберите способ оплаты</option>
+                            <option value="Онлайн">Онлайн</option>
+                            <option value="Карта">Карта</option>
+                            <option value="Наличные">Наличные</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-12">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5>Итого к оплате: {{ total }} руб.</h5>
+                            </div>
+                            <div>
+                                <a href="{{ url_for('product_list') }}" class="btn btn-outline-secondary">Продолжить
+                                    покупки</a>
+                                <button type="submit" class="btn btn-primary">
+                                    Оформить заказ
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        Ваша корзина пуста.
+    </div>
+    <a class="btn btn-primary" href="{{ url_for('product_list') }}" role="button">Перейти к товарам</a>
+    {% endif %}
+</div>
+{% endblock %}
